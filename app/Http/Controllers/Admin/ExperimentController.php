@@ -82,7 +82,7 @@ class ExperimentController extends Controller
     public function show(Experiment $experiment)
     {
         return Inertia::render('Admin/Experiments/Show', [
-            'experiment' => $experiment->load(['category:id,name', 'materials', 'parameters']),
+            'experiment' => $experiment->load(['category:id,name', 'materials', 'parameters', 'questions.options']),
         ]);
     }
 }

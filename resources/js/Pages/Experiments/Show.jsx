@@ -192,10 +192,18 @@ function PracticalPanel({ experiment, inputParams, outputParams, initialValues }
     const [results, setResults] = useState([]);
     const [canFinish, setCanFinish] = useState(false);
     const [status, setStatus] = useState('idle'); // idle | starting | ready
+    const [stage, setStage] = useState('trials'); // trials | quiz | conclusion | done
     const [error, setError] = useState(null);
-    const [finished, setFinished] = useState(false);
-    const [finishMessage, setFinishMessage] = useState(null);
     const minTrials = 4;
+
+    // kuis
+    const [questions, setQuestions] = useState([]);
+    const [answers, setAnswers] = useState({});
+    const [quizResult, setQuizResult] = useState(null);
+
+    // kesimpulan & hasil akhir
+    const [conclusion, setConclusion] = useState('');
+    const [finishResult, setFinishResult] = useState(null);
 
     const startAttempt = () => {
         setStatus('starting');
@@ -213,9 +221,8 @@ function PracticalPanel({ experiment, inputParams, outputParams, initialValues }
             });
     };
 
-    // preview hasil perhitungan saat slider digeser, tanpa mencatat
     useEffect(() => {
-        if (status !== 'ready') return;
+        if (status !== 'ready' || stage !== 'trials') return;
         const timer = setTimeout(() => {
             axios
                 .post(route('experiments.simulate', experiment.slug), { inputs: values })
@@ -223,7 +230,7 @@ function PracticalPanel({ experiment, inputParams, outputParams, initialValues }
                 .catch(() => setPreviewOutputs({}));
         }, 150);
         return () => clearTimeout(timer);
-    }, [values, status]);
+    }, [values, status, stage]);
 
     const handleChange = (symbol, value) => {
         setValues((prev) => ({ ...prev, [symbol]: Number(value) }));
@@ -242,17 +249,53 @@ function PracticalPanel({ experiment, inputParams, outputParams, initialValues }
             });
     };
 
-    const finishAttempt = () => {
+    const startQuiz = () => {
         setError(null);
         axios
-            .patch(route('attempts.finish', attempt.id))
+            .get(route('attempts.quiz', attempt.id))
             .then((res) => {
-                setFinished(true);
-                setFinishMessage(res.data.message);
+                setQuestions(res.data.questions);
+                setStage('quiz');
             })
-            .catch((err) => {
-                setError(err.response?.data?.message ?? 'Gagal menyelesaikan praktikum.');
-            });
+            .catch(() => setError('Gagal memuat soal.'));
+    };
+
+    const selectAnswer = (questionId, optionId) => {
+        setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
+    };
+
+    const submitQuizAnswers = () => {
+        setError(null);
+        if (Object.keys(answers).length < questions.length) {
+            setError('Jawab semua soal terlebih dahulu.');
+            return;
+        }
+        const payload = Object.entries(answers).map(([qid, oid]) => ({
+            question_id: Number(qid),
+            question_option_id: oid,
+        }));
+        axios
+            .post(route('attempts.quiz.store', attempt.id), { answers: payload })
+            .then((res) => {
+                setQuizResult(res.data);
+                setStage('conclusion');
+            })
+            .catch((err) => setError(err.response?.data?.message ?? 'Gagal mengirim jawaban.'));
+    };
+
+    const finishAttempt = () => {
+        setError(null);
+        if (conclusion.trim().length < 5) {
+            setError('Tulis kesimpulan terlebih dahulu.');
+            return;
+        }
+        axios
+            .patch(route('attempts.finish', attempt.id), { conclusion })
+            .then((res) => {
+                setFinishResult(res.data);
+                setStage('done');
+            })
+            .catch((err) => setError(err.response?.data?.message ?? 'Gagal menyelesaikan praktikum.'));
     };
 
     if (status === 'idle') {
@@ -281,14 +324,91 @@ function PracticalPanel({ experiment, inputParams, outputParams, initialValues }
         );
     }
 
-    if (finished) {
+    if (stage === 'done') {
+        const b = finishResult?.breakdown;
         return (
             <div className="rounded-lg bg-white p-6 shadow-sm">
-                <div className="rounded bg-green-100 p-4 text-green-800">{finishMessage}</div>
+                <h3 className="mb-1 font-semibold">Praktikum Selesai</h3>
+                <div className="mb-4 rounded bg-green-100 p-4 text-green-800">
+                    Nilai Akhir: <span className="text-xl font-bold">{finishResult?.final_score}</span>
+                </div>
+                {b && (
+                    <table className="w-full text-left text-sm">
+                        <tbody>
+                            <tr className="border-t"><td className="py-2">Praktikum (30%)</td><td className="py-2 text-right">{b.practice}</td></tr>
+                            <tr className="border-t"><td className="py-2">Akurasi (25%)</td><td className="py-2 text-right">{b.accuracy}</td></tr>
+                            <tr className="border-t"><td className="py-2">Kuis (30%)</td><td className="py-2 text-right">{b.quiz}</td></tr>
+                            <tr className="border-t"><td className="py-2">Kesimpulan (15%)</td><td className="py-2 text-right">{b.conclusion}</td></tr>
+                        </tbody>
+                    </table>
+                )}
             </div>
         );
     }
 
+    if (stage === 'quiz') {
+        return (
+            <div className="rounded-lg bg-white p-6 shadow-sm">
+                <h3 className="mb-4 font-semibold">Kuis</h3>
+                {error && <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-700">{error}</div>}
+                <div className="space-y-6">
+                    {questions.map((q, qi) => (
+                        <div key={q.id}>
+                            <p className="mb-2 font-medium">{qi + 1}. {q.question_text}</p>
+                            <div className="space-y-1">
+                                {q.options.map((o) => (
+                                    <label key={o.id} className="flex items-center gap-2 text-sm">
+                                        <input
+                                            type="radio"
+                                            name={`q-${q.id}`}
+                                            checked={answers[q.id] === o.id}
+                                            onChange={() => selectAnswer(q.id, o.id)}
+                                        />
+                                        {o.option_text}
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <button
+                    onClick={submitQuizAnswers}
+                    className="mt-6 rounded bg-indigo-600 px-4 py-2 text-sm text-white"
+                >
+                    Kirim Jawaban
+                </button>
+            </div>
+        );
+    }
+
+    if (stage === 'conclusion') {
+        return (
+            <div className="rounded-lg bg-white p-6 shadow-sm">
+                <h3 className="mb-1 font-semibold">Kesimpulan</h3>
+                {quizResult && (
+                    <p className="mb-4 text-sm text-gray-500">
+                        Kuis: {quizResult.correct}/{quizResult.total} jawaban benar.
+                    </p>
+                )}
+                {error && <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-700">{error}</div>}
+                <textarea
+                    value={conclusion}
+                    onChange={(e) => setConclusion(e.target.value)}
+                    rows={5}
+                    placeholder="Tulis kesimpulan dari praktikum ini..."
+                    className="w-full rounded border-gray-300 text-sm"
+                />
+                <button
+                    onClick={finishAttempt}
+                    className="mt-4 rounded bg-green-600 px-4 py-2 text-sm text-white"
+                >
+                    Selesai
+                </button>
+            </div>
+        );
+    }
+
+    // stage === 'trials'
     return (
         <div className="rounded-lg bg-white p-6 shadow-sm">
             <h3 className="mb-1 font-semibold">Mode Praktikum</h3>
@@ -346,10 +466,10 @@ function PracticalPanel({ experiment, inputParams, outputParams, initialValues }
 
             {canFinish && (
                 <button
-                    onClick={finishAttempt}
+                    onClick={startQuiz}
                     className="mt-6 rounded bg-green-600 px-4 py-2 text-sm text-white"
                 >
-                    Selesai & Lanjut ke Soal
+                    Lanjut ke Soal
                 </button>
             )}
         </div>

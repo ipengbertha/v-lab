@@ -27,10 +27,154 @@ export default function Show({ experiment }) {
 
                     <ParametersPanel experiment={experiment} />
                     <DescriptionPanel experiment={experiment} />
+                    <QuestionsPanel experiment={experiment} />
                     <MaterialsPanel experiment={experiment} />
                 </div>
             </div>  
         </AuthenticatedLayout>
+    );
+}
+
+function emptyQuestionForm() {
+    return {
+        question_text: '',
+        explanation: '',
+        options: [
+            { option_text: '' },
+            { option_text: '' },
+            { option_text: '' },
+            { option_text: '' },
+        ],
+        correct_index: 0,
+    };
+}
+
+function QuestionsPanel({ experiment }) {
+    const [editing, setEditing] = useState(null);
+    const form = useForm(emptyQuestionForm());
+
+    const submit = (e) => {
+        e.preventDefault();
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => { form.reset(); form.setData(emptyQuestionForm()); setEditing(null); },
+        };
+        if (editing) {
+            form.put(route('admin.questions.update', editing.id), options);
+        } else {
+            form.post(route('admin.questions.store', experiment.id), options);
+        }
+    };
+
+    const startEdit = (q) => {
+        setEditing(q);
+        form.setData({
+            question_text: q.question_text,
+            explanation: q.explanation ?? '',
+            options: q.options.map((o) => ({ option_text: o.option_text })),
+            correct_index: q.options.findIndex((o) => o.is_correct),
+        });
+    };
+
+    const cancelEdit = () => { setEditing(null); form.reset(); form.setData(emptyQuestionForm()); form.clearErrors(); };
+
+    const remove = (q) => {
+        if (confirm('Hapus soal ini?')) {
+            router.delete(route('admin.questions.destroy', q.id), { preserveScroll: true });
+        }
+    };
+
+    const setOptionText = (i, text) => {
+        const options = [...form.data.options];
+        options[i] = { ...options[i], option_text: text };
+        form.setData('options', options);
+    };
+
+    const labels = ['A', 'B', 'C', 'D'];
+
+    return (
+        <div className="bg-white p-6 shadow-sm sm:rounded-lg">
+            <h3 className="mb-4 font-semibold">Soal Kuis</h3>
+
+            <div className="mb-6 space-y-3">
+                {experiment.questions.length === 0 && (
+                    <p className="text-sm text-gray-400">Belum ada soal.</p>
+                )}
+                {experiment.questions.map((q) => (
+                    <div key={q.id} className="rounded border p-3">
+                        <div className="flex items-start justify-between gap-4">
+                            <p className="font-medium">{q.question_text}</p>
+                            <div className="shrink-0 space-x-2 text-sm">
+                                <button onClick={() => startEdit(q)} className="text-blue-600">Edit</button>
+                                <button onClick={() => remove(q)} className="text-red-600">Hapus</button>
+                            </div>
+                        </div>
+                        <ul className="mt-2 space-y-1 text-sm">
+                            {q.options.map((o, i) => (
+                                <li key={o.id} className={o.is_correct ? 'font-semibold text-green-700' : 'text-gray-600'}>
+                                    {labels[i]}. {o.option_text} {o.is_correct && '✓'}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                ))}
+            </div>
+
+            <form onSubmit={submit} className="space-y-3">
+                <div>
+                    <textarea
+                        placeholder="Pertanyaan"
+                        value={form.data.question_text}
+                        onChange={(e) => form.setData('question_text', e.target.value)}
+                        rows={2}
+                        className="w-full rounded border-gray-300 text-sm"
+                    />
+                    {form.errors.question_text && <p className="text-xs text-red-600">{form.errors.question_text}</p>}
+                </div>
+
+                <div className="grid gap-2 sm:grid-cols-2">
+                    {form.data.options.map((opt, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                            <input
+                                type="radio"
+                                name="correct_index"
+                                checked={form.data.correct_index === i}
+                                onChange={() => form.setData('correct_index', i)}
+                            />
+                            <input
+                                placeholder={`Opsi ${labels[i]}`}
+                                value={opt.option_text}
+                                onChange={(e) => setOptionText(i, e.target.value)}
+                                className="w-full rounded border-gray-300 text-sm"
+                            />
+                        </div>
+                    ))}
+                </div>
+                {form.errors['options.0.option_text'] && (
+                    <p className="text-xs text-red-600">Semua 4 opsi wajib diisi.</p>
+                )}
+
+                <textarea
+                    placeholder="Penjelasan jawaban (opsional)"
+                    value={form.data.explanation}
+                    onChange={(e) => form.setData('explanation', e.target.value)}
+                    rows={2}
+                    className="w-full rounded border-gray-300 text-sm"
+                />
+
+                <div className="flex gap-2">
+                    <button type="submit" disabled={form.processing}
+                        className="rounded bg-gray-800 px-4 py-1.5 text-sm text-white disabled:opacity-50">
+                        {editing ? 'Simpan' : 'Tambah Soal'}
+                    </button>
+                    {editing && (
+                        <button type="button" onClick={cancelEdit} className="rounded border px-4 py-1.5 text-sm">
+                            Batal
+                        </button>
+                    )}
+                </div>
+            </form>
+        </div>
     );
 }
 

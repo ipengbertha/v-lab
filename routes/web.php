@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ExperimentController;
 use App\Http\Controllers\Admin\MaterialController;
 use App\Http\Controllers\Admin\ExperimentParameterController;
+use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\ExperimentController as UserExperimentController;
 use App\Http\Controllers\AttemptController;
 use Illuminate\Foundation\Application;
@@ -53,6 +54,13 @@ Route::middleware(['auth', 'not.blocked', 'role:admin'])
             ->name('parameters.update');
         Route::delete('parameters/{parameter}', [ExperimentParameterController::class, 'destroy'])
             ->name('parameters.destroy');
+
+        Route::post('experiments/{experiment}/questions', [QuestionController::class, 'store'])
+            ->name('questions.store');
+        Route::put('questions/{question}', [QuestionController::class, 'update'])
+            ->name('questions.update');
+        Route::delete('questions/{question}', [QuestionController::class, 'destroy'])
+            ->name('questions.destroy');
     });
 
 Route::middleware('auth')->group(function () {
@@ -70,6 +78,11 @@ Route::middleware('auth')->group(function () {
         ->name('attempts.results.store');
     Route::patch('/attempts/{attempt}/finish', [AttemptController::class, 'finish'])
         ->name('attempts.finish');
+
+    Route::get('/attempts/{attempt}/quiz', [AttemptController::class, 'quiz'])
+        ->name('attempts.quiz');
+    Route::post('/attempts/{attempt}/quiz', [AttemptController::class, 'submitQuiz'])
+        ->name('attempts.quiz.store');
 });
 
 require __DIR__.'/auth.php';

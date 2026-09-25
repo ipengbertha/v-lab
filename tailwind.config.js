@@ -13,7 +13,15 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['"Bricolage Grotesque"', ...defaultTheme.fontFamily.sans],
+                display: ['"Special Gothic Expanded One"', ...defaultTheme.fontFamily.sans],
+            },
+            colors: {
+                'vlab-ink': '#023436',
+                'vlab-primary': '#023436',
+                'vlab-accent': '#F76F8E',
+                'vlab-soft': '#A3D9BA',
+                'vlab-bg': '#F3FBF6',
             },
         },
     },

@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, usePage, router } from '@inertiajs/react';
+import { Head, useForm, usePage, router, Link } from '@inertiajs/react';
 import { useState } from 'react';
 
 const empty = {
@@ -205,6 +205,9 @@ export default function Index({ experiments, categories, formulas }) {
                                             </button>
                                         </td>
                                         <td className="space-x-3 p-3 text-right">
+                                            <Link href={route('admin.experiments.show', x.id)} className="text-indigo-600">
+                                                Kelola
+                                            </Link>
                                             <button onClick={() => startEdit(x)} className="text-blue-600">Edit</button>
                                             <button onClick={() => remove(x)} className="text-red-600">Hapus</button>
                                         </td>

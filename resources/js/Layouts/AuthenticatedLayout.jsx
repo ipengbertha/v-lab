@@ -30,6 +30,12 @@ export default function AuthenticatedLayout({ header, children }) {
                                 >
                                     Dashboard
                                 </NavLink>
+                                <NavLink
+                                    href={route('experiments.index')}
+                                    active={route().current('experiments.*')}
+                                >
+                                    Eksperimen
+                                </NavLink>
                                 {user.role === 'admin' && (
                                     <NavLink
                                         href={route('admin.categories.index')}
@@ -43,7 +49,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                         href={route('admin.experiments.index')}
                                         active={route().current('admin.experiments.*')}
                                     >
-                                        Eksperimen
+                                        Kelola Eksperimen
                                     </NavLink>
                                 )}
                             </div>
@@ -150,10 +156,16 @@ export default function AuthenticatedLayout({ header, children }) {
                         >
                             Dashboard
                         </ResponsiveNavLink>
-                        {user.role === 'admin' && (
                         <ResponsiveNavLink
-                            href={route('admin.categories.index')}
-                            active={route().current('admin.categories.*')}
+                            href={route('experiments.index')}
+                            active={route().current('experiments.*')}
+                        >
+                            Eksperimen
+                        </ResponsiveNavLink>
+                        {user.role === 'admin' && (
+                            <ResponsiveNavLink
+                                href={route('admin.categories.index')}
+                                active={route().current('admin.categories.*')}
                             >
                                 Kategori
                             </ResponsiveNavLink>
@@ -163,7 +175,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                 href={route('admin.experiments.index')}
                                 active={route().current('admin.experiments.*')}
                             >
-                                Eksperimen
+                                Kelola Eksperimen
                             </ResponsiveNavLink>
                         )}
                     </div>

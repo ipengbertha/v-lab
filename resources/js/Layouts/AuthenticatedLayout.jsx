@@ -36,6 +36,18 @@ export default function AuthenticatedLayout({ header, children }) {
                                 >
                                     Eksperimen
                                 </NavLink>
+                                <ResponsiveNavLink
+                                    href={route('history.index')}
+                                    active={route().current('history.*')}
+                                >
+                                    Riwayat
+                                </ResponsiveNavLink>
+                                <NavLink
+                                    href={route('history.index')}
+                                    active={route().current('history.*')}
+                                >
+                                    Riwayat
+                                </NavLink>
                                 {user.role === 'admin' && (
                                     <NavLink
                                         href={route('admin.categories.index')}

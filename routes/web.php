@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ExperimentParameterController;
 use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\ExperimentController as UserExperimentController;
 use App\Http\Controllers\AttemptController;
+use App\Http\Controllers\HistoryController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -83,6 +84,9 @@ Route::middleware('auth')->group(function () {
         ->name('attempts.quiz');
     Route::post('/attempts/{attempt}/quiz', [AttemptController::class, 'submitQuiz'])
         ->name('attempts.quiz.store');
+
+    Route::get('/history', [HistoryController::class, 'index'])->name('history.index');
+    Route::get('/history/{attempt}', [HistoryController::class, 'show'])->name('history.show');
 });
 
 require __DIR__.'/auth.php';

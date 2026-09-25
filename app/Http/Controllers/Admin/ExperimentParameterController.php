@@ -37,14 +37,12 @@ class ExperimentParameterController extends Controller
     private function validated(Request $request): array
     {
         return $request->validate([
-            'symbol' => 'required|string|max:10',
-            'label' => 'required|string|max:100',
-            'unit' => 'required|string|max:20',
-            'type' => ['required', Rule::in(['input', 'output'])],
-            'min_value' => 'nullable|numeric',
-            'max_value' => 'nullable|numeric|gte:min_value',
-            'step' => 'nullable|numeric|min:0.0001',
-            'default_value' => 'nullable|numeric',
+            'category_id' => 'sometimes|required|exists:categories,id',
+            'title'       => 'sometimes|required|string|max:150',
+            'formula_key' => ['sometimes', 'required', Rule::in(self::FORMULAS)],
+            'difficulty'  => ['sometimes', 'required', Rule::in(['mudah', 'sedang', 'sulit'])],
+            'description' => 'nullable|string|max:1000',
+            'is_active'   => 'boolean',
         ]);
     }
 }

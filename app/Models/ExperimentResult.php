@@ -7,7 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class ExperimentResult extends Model
 {
     protected $guarded = [];
-    protected $casts = ['is_correct' => 'boolean'];
+    protected $casts = [
+        'is_correct' => 'boolean',
+        'inputs' => 'array',
+        'outputs' => 'array',
+    ];
 
 public function attempt()  
     { 

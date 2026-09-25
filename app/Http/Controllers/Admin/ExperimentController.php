@@ -56,13 +56,13 @@ class ExperimentController extends Controller
         return back()->with('success', 'Eksperimen dihapus.');
     }
 
-    private function validated(Request $request): array
+        private function validated(Request $request): array
     {
         return $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'title'       => 'required|string|max:150',
-            'formula_key' => ['required', Rule::in(self::FORMULAS)],
-            'difficulty'  => ['required', Rule::in(['mudah', 'sedang', 'sulit'])],
+            'category_id' => 'sometimes|required|exists:categories,id',
+            'title'       => 'sometimes|required|string|max:150',
+            'formula_key' => ['sometimes', 'required', Rule::in(self::FORMULAS)],
+            'difficulty'  => ['sometimes', 'required', Rule::in(['mudah', 'sedang', 'sulit'])],
             'description' => 'nullable|string|max:1000',
             'is_active'   => 'boolean',
         ]);

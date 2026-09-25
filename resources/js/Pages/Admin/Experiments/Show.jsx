@@ -26,10 +26,47 @@ export default function Show({ experiment }) {
                     )}
 
                     <ParametersPanel experiment={experiment} />
+                    <DescriptionPanel experiment={experiment} />
                     <MaterialsPanel experiment={experiment} />
                 </div>
-            </div>
+            </div>  
         </AuthenticatedLayout>
+    );
+}
+
+function DescriptionPanel({ experiment }) {
+    const form = useForm({ description: experiment.description ?? '' });
+
+    const submit = (e) => {
+        e.preventDefault();
+        form.put(route('admin.experiments.update', experiment.id), {
+            preserveScroll: true,
+        });
+    };
+
+    return (
+        <div className="bg-white p-6 shadow-sm sm:rounded-lg">
+            <h3 className="mb-4 font-semibold">Deskripsi / Instruksi Praktikum</h3>
+            <form onSubmit={submit} className="space-y-2">
+                <textarea
+                    placeholder="Tulis instruksi untuk mode praktikum, misalnya: Gunakan hambatan 6 Ω..."
+                    value={form.data.description}
+                    onChange={(e) => form.setData('description', e.target.value)}
+                    rows={4}
+                    className="w-full rounded border-gray-300 text-sm"
+                />
+                {form.errors.description && (
+                    <p className="text-xs text-red-600">{form.errors.description}</p>
+                )}
+                <button
+                    type="submit"
+                    disabled={form.processing}
+                    className="rounded bg-gray-800 px-4 py-1.5 text-sm text-white disabled:opacity-50"
+                >
+                    Simpan Deskripsi
+                </button>
+            </form>
+        </div>
     );
 }
 
